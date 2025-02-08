@@ -1,3 +1,3 @@
-module database-project
+module personalDB
 
 go 1.23
