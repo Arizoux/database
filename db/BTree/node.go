@@ -1,4 +1,4 @@
-package storage
+package BTree
 
 import (
 	"bytes"
@@ -24,13 +24,13 @@ Each key-value pair is stored like this:
 */
 
 const (
-	MaxNodeSize = 4096
+	MaxPageSize = 4096
 	Header      = 4
 )
 
 const (
-	BnodeInternal = 1
-	BnodeLeaf     = 2
+	BTreeInternal = 1
+	BTreeLeaf     = 2
 )
 
 type Node []byte
