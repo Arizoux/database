@@ -2,16 +2,6 @@ package BTree
 
 import "encoding/binary"
 
-//Implements B-Tree indexing
-
-type BTree struct {
-	root uint64 //page num of root node
-
-	get func(uint64) []byte //func to read a page from disk
-	new func([]byte) uint64 // Function to allocate and write a new page
-	del func(uint64)        // Function to deallocate a page
-}
-
 /*
 this function inserts a new kv-pair into a leaf node. This is not done in-place (copy-on-write) in order to prevent corruption,
 but instead a new node is created from the old node (so that, should an error happen during writing, data is not lost
