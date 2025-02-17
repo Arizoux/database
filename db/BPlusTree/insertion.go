@@ -1,6 +1,34 @@
 package BPlusTree
 
-import "encoding/binary"
+import (
+	"bytes"
+	"encoding/binary"
+)
+
+// inserts or updates a node (either internal or leaf) in a b+tree
+func treeInsert(tree *BTree, node Node, key []byte, val []byte) Node {
+	//create a new node for copy-on-write inserting
+	new := Node(make([]byte, 2*MaxPageSize))
+	//find the index where the key-value should be inserted
+	idx := nodeLookupBS(node, key)
+
+	switch node.getNodeType() {
+	case BTreeLeaf:
+		//check if the key already exists, if it does just update it
+		if bytes.Equal(key, node.getKey(idx)) {
+			leafUpdate(new, node, idx, key, val)
+		} else {
+			leafInsert(new, node, idx+1, key, val)
+		}
+
+	case BTreeInternal:
+		internalInsert(tree, new, node, idx, key, val)
+
+	default:
+		panic("node format is wrong!")
+	}
+	return new
+}
 
 /*
 this function inserts a new kv-pair into a leaf node. This is not done in-place (copy-on-write) in order to prevent corruption,
@@ -14,11 +42,23 @@ func leafInsert(new Node, old Node, idx uint16, key []byte, value []byte) {
 	nodeCopyRange(new, old, idx+1, idx, old.numKeys()-idx) //copy the rest of the kv-pairs. Add one to the index of the new node because we inserted the new key at its place.
 }
 
+// updates a leaf node by replacing the old key-value pair of the old node with the updated kv-pair in the new node at the same index
 func leafUpdate(new Node, old Node, idx uint16, key []byte, val []byte) {
 	new.setHeader(BTreeLeaf, old.numKeys())
 	nodeCopyRange(new, old, 0, 0, idx)
 	nodeInsertKV(new, idx, 0, key, val)
 	nodeCopyRange(new, old, idx+1, idx+1, old.numKeys()-(idx+1))
+}
+
+// inserts a new key and pointer to that key in to an internal node
+func internalInsert(tree *BTree, new Node, old Node, idx uint16, key []byte, value []byte) {
+	kptr := old.getPointer(idx)
+	knode := treeInsert(tree, tree.get(kptr), key, value)
+	nsplit, split := splitNode3(knode)
+	// deallocate the kid node
+	tree.del(kptr)
+	// update the kid links
+	nodeUpdateKidsInternal(tree, new, old, idx, split[:nsplit]...)
 }
 
 // insert a kv-pair at a certain index in a node
@@ -56,6 +96,30 @@ func nodeUpdateKidsInternal(tree *BTree, new Node, old Node, idx uint16, kids ..
 
 // split a node into 2 new ones
 func splitNode2(old Node, left Node, right Node) {
+	if old.numKeys() < 2 {
+		return
+	}
+	nleft := old.numKeys() / 2
+
+	leftBytes := func() uint16 {
+		return 4 + 8*nleft + 2*nleft + old.getOffset(nleft)
+	}
+	for leftBytes() > MaxPageSize {
+		nleft--
+	}
+	rightBytes := func() uint16 {
+		return old.nbytes() - leftBytes() + 4
+	}
+	for rightBytes() > MaxPageSize {
+		nleft++
+	}
+
+	nright := old.numKeys() - nleft
+
+	left.setHeader(old.getNodeType(), nleft)
+	right.setHeader(old.getNodeType(), nright)
+	nodeCopyRange(left, old, 0, 0, nleft)
+	nodeCopyRange(right, old, 0, nleft, nright)
 
 }
 
