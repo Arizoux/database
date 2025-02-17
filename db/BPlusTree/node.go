@@ -1,4 +1,4 @@
-package BTree
+package BPlusTree
 
 import (
 	"bytes"
