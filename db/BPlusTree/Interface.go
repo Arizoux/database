@@ -39,5 +39,5 @@ func (tree *BTree) Insert(key []byte, val []byte) {
 
 // Delete a key and returns whether the key was there
 func (tree *BTree) Delete(key []byte) bool {
-
+	return true
 }
