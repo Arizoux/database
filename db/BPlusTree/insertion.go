@@ -66,10 +66,13 @@ func nodeInsertKV(n Node, idx uint16, ptr uint64, key []byte, value []byte) {
 	n.setPointer(idx, ptr)
 
 	kvPos := n.kvPos(idx)
-	binary.LittleEndian.PutUint16(n[kvPos:], uint16(len(key)))     //set the key length at the kv-pos + 0. Cast the len func to uint16 because it normally returns an int64
-	binary.LittleEndian.PutUint16(n[kvPos+2:], uint16(len(value))) //set the value at kv-pos + 2
+	//set the key length at the kv-pos + 0. Cast the len func to uint16 because it normally returns an int64
+	binary.LittleEndian.PutUint16(n[kvPos:], uint16(len(key)))
+	//set the value at kv-pos + 2
+	binary.LittleEndian.PutUint16(n[kvPos+2:], uint16(len(value)))
 
-	copy(n[kvPos+4:], key) // copy the key and value to the correct positions
+	// copy the key and value to the correct positions
+	copy(n[kvPos+4:], key)
 	copy(n[kvPos+4+uint16(len(key)):], value)
 
 	n.setOffset(idx+1, n.getOffset(idx)+4+uint16(len(key)+len(value)))
