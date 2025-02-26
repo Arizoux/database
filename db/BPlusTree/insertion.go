@@ -8,7 +8,7 @@ import (
 // inserts or updates a node (either internal or leaf) in a b+tree
 func treeInsert(tree *BTree, node Node, key []byte, val []byte) Node {
 	//create a new node for copy-on-write inserting
-	new := Node(make([]byte, 2*MaxPageSize))
+	newNode := Node(make([]byte, 2*MaxPageSize))
 	//find the index where the key-value should be inserted
 	idx := nodeLookupBS(node, key)
 
@@ -16,18 +16,18 @@ func treeInsert(tree *BTree, node Node, key []byte, val []byte) Node {
 	case BTreeLeaf:
 		//check if the key already exists, if it does just update it
 		if bytes.Equal(key, node.getKey(idx)) {
-			leafUpdate(new, node, idx, key, val)
+			leafUpdate(newNode, node, idx, key, val)
 		} else {
-			leafInsert(new, node, idx+1, key, val)
+			leafInsert(newNode, node, idx+1, key, val)
 		}
 
 	case BTreeInternal:
-		internalInsert(tree, new, node, idx, key, val)
+		internalInsert(tree, newNode, node, idx, key, val)
 
 	default:
 		panic("node format is wrong!")
 	}
-	return new
+	return newNode
 }
 
 /*
