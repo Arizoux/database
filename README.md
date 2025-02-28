@@ -1,4 +1,4 @@
-What this Project is about:
+## What this Project is about:
 
 This project is a simple file-based Key-Value-Database, which is based on the guide book "Build your own database from scratch in Go part 2" by James Smith. 
 
